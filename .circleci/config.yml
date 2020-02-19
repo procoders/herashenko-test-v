@@ -1,0 +1,36 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/nest-test-task
+
+    docker:
+      - image: circleci/node:12
+      - image: circleci/postgres:12
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 12345
+          PGDATA: /data/postgres
+          POSTGRES_DB: testtasktest
+    environment:
+      PORT: 2502
+      HOST: localhost
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: 12345
+    steps:
+      - run:
+          name: Install ltree extension for Postgres
+          command: |
+            sudo apt-get update
+            sudo apt-get install postgresql-client
+            dockerize -wait tcp://localhost:5432 -timeout 1m
+            psql -U postgres -p 12345 -h localhost -p 5432 -c 'create extension ltree'
+      - checkout
+      - restore_cache:
+          key: v1-deps-{{ checksum "package.json" }}
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-deps-{{ checksum "package.json" }}
+      - run: npm install    
+      - run: npm run test

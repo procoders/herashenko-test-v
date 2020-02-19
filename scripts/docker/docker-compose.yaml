@@ -1,0 +1,52 @@
+version: '3.5'
+
+services:
+    postgres:
+        container_name: postgres_container
+        image: postgres:12
+        restart: always
+        env_file:
+            - ../../.env.production
+        volumes:
+            - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+        ports:
+            - '5432:5432'
+        networks:
+            - postgres
+        restart: unless-stopped
+    mongo:
+        container_name: mongo_container
+        image: mongo:4.2.3
+        restart: always
+        env_file: 
+            - ../../.env.production
+        ports: 
+            - '27017:27017'
+        networks: 
+            - mongo
+        restart: unless-stopped
+    app:
+        env_file:
+            - ../../.env.production
+        container_name: testtask
+        restart: always
+        build:
+            context: ../../
+            dockerfile: Dockerfile
+        ports:
+            - '2502:2502'
+        links:
+            - postgres
+            - mongo
+        networks:
+            - postgres
+            - mongo
+        depends_on:
+            - postgres
+            - mongo
+
+networks:
+    postgres:
+        driver: bridge
+    mongo:
+        driver: bridge
